@@ -148,6 +148,16 @@ wss.on('connection', (ws) => {
         if (!rooms.has(roomId)) {
           return send(ws, 'error', { message: 'Room not found' });
         }
+
+        rooms.get(roomId).users.forEach((socket) => {
+          socket.send(
+            JSON.stringify({
+              type: 'error',
+              message: 'Room has been deleted',
+            }),
+          );
+        });
+
         rooms.delete(roomId);
 
         broadcast('general', {
@@ -167,43 +177,3 @@ wss.on('connection', (ws) => {
     }
   });
 });
-// const emitter = new EventEmitter();
-// const messages = [];
-
-// app.post('/messages', (req, res) => {
-//   const { text } = req.body;
-
-//   const message = {
-//     id: messages.length + 1,
-//     text,
-//     timestamp: new Date(),
-//   };
-
-//   messages.push(message);
-
-//   emitter.emit('message', message);
-
-//   res.status(201).json(message);
-// });
-
-// wss.on('connection', (connection) => {
-//   connection.on('message', (text) => {
-//     const message = {
-//       id: messages.length + 1,
-//       text: text.toString(),
-//       timestamp: new Date(),
-//     };
-
-//     messages.push(message);
-
-//     emitter.emit('message', message);
-//   });
-// });
-
-// emitter.on('message', (message) => {
-//   wss.clients.forEach((client) => {
-//     if (client.readyState === WebSocket.OPEN) {
-//       client.send(JSON.stringify(message));
-//     }
-//   });
-// });
