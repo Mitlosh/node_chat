@@ -32,9 +32,9 @@ function broadcast(roomId, data) {
     return;
   }
 
-  room.users.forEach((socket) => {
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(data));
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
     }
   });
 }
@@ -117,7 +117,6 @@ wss.on('connection', (ws) => {
           return send(ws, 'error', { message: 'Room not found' });
         }
 
-        // залишаємо попередню кімнату
         rooms.get(ws.roomId)?.users.delete(ws);
         ws.roomId = roomId;
         rooms.get(roomId).users.add(ws);
@@ -149,13 +148,18 @@ wss.on('connection', (ws) => {
           return send(ws, 'error', { message: 'Room not found' });
         }
 
-        rooms.get(roomId).users.forEach((socket) => {
-          socket.send(
-            JSON.stringify({
-              type: 'error',
-              message: 'Room has been deleted',
-            }),
-          );
+        const room = rooms.get(roomId);
+
+        const defaultRoom = rooms.get('general');
+
+        room.users.forEach((user) => {
+          user.roomId = 'general';
+          defaultRoom.users.add(user);
+
+          send(user, 'joined', {
+            roomId: 'general',
+            messages: defaultRoom.messages,
+          });
         });
 
         rooms.delete(roomId);
